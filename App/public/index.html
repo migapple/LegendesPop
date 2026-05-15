@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Légendes de la Pop</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#070510;--ink2:#0e0c1e;--gold:#c9a84c;--gold2:#e8c97a;--gold3:#a07830;--dim:#555570;--dim2:#252238;--text:#d8d4c8;--text2:#9090a8;--fs:1;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--ink);}
+#app{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;background:var(--ink);overflow:hidden;}
+.header{padding-top:calc(14px + env(safe-area-inset-top));padding-bottom:11px;padding-left:16px;padding-right:16px;background:var(--ink);flex-shrink:0;border-bottom:0.5px solid #1e1a30;display:flex;align-items:center;justify-content:space-between;}
+.header-title{font-family:'IM Fell English',serif;font-size:calc(20px * var(--fs));color:var(--gold);letter-spacing:0.02em;}
+.header-sub{font-family:'Cormorant Garamond',serif;font-size:calc(12px * var(--fs));color:var(--dim);font-style:italic;}
+.hdr-right{display:flex;align-items:center;gap:6px;}
+.lang-btn{background:none;border:0.5px solid var(--dim2);border-radius:8px;padding:4px 9px;cursor:pointer;font-size:calc(17px * var(--fs));display:flex;align-items:center;}
+.settings-btn{background:none;border:none;color:var(--dim);font-size:20px;cursor:pointer;padding:2px 0 2px 4px;}
+.tabs{display:flex;background:var(--ink);flex-shrink:0;border-bottom:0.5px solid #1e1a30;}
+.tab-btn{flex:1;padding:10px 4px 9px;font-family:'Cormorant Garamond',serif;font-size:calc(14px * var(--fs));color:var(--dim);background:none;border:none;cursor:pointer;position:relative;transition:color .2s;letter-spacing:0.03em;}
+.tab-btn.active{color:var(--gold);}
+.tab-btn.active::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:1px;background:var(--gold);}
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(12px + env(safe-area-inset-bottom));}
+.section{display:none;}.section.active{display:block;}
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px;}
+.loading-icon{font-size:48px;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.92);}}
+.loading-text{font-family:'IM Fell English',serif;font-size:calc(16px * var(--fs));color:var(--gold);text-align:center;}
+.loading-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(13px * var(--fs));color:var(--dim);text-align:center;}
+.loading-bar{width:200px;height:2px;background:var(--dim2);border-radius:2px;overflow:hidden;}
+.loading-bar-fill{height:100%;background:linear-gradient(to right,var(--gold3),var(--gold));border-radius:2px;animation:loadbar 2s ease-in-out infinite;}
+@keyframes loadbar{0%{width:0%;margin-left:0;}60%{width:80%;}100%{width:100%;margin-left:100%;}}
+.search-wrap{padding:12px 14px 6px;position:relative;}
+.search-input{width:100%;background:var(--ink2);border:0.5px solid var(--dim2);border-radius:10px;padding:9px 36px 9px 14px;font-family:'Cormorant Garamond',serif;font-size:calc(15px * var(--fs));color:var(--text);-webkit-appearance:none;outline:none;}
+.search-input::placeholder{color:var(--dim);}
+.search-clear{position:absolute;right:24px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.12);border:none;cursor:pointer;color:var(--text2);font-size:13px;display:none;align-items:center;justify-content:center;}
+.filter-row{display:flex;gap:6px;padding:0 14px 10px;overflow-x:auto;scrollbar-width:none;}
+.filter-row::-webkit-scrollbar{display:none;}
+.filter-chip{flex-shrink:0;padding:4px 12px;border-radius:20px;border:0.5px solid var(--dim2);background:none;font-family:'Cormorant Garamond',serif;font-size:calc(13px * var(--fs));color:var(--dim);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.filter-chip.active{background:#1e1628;border-color:var(--gold3);color:var(--gold);}
+.artist-list{padding:0 12px;}
+.artist-card{background:var(--ink2);border:0.5px solid #1e1a30;border-radius:12px;margin-bottom:9px;padding:11px;display:flex;gap:11px;align-items:flex-start;cursor:pointer;transition:border-color .2s;}
+.artist-card:active{border-color:var(--gold3);}
+.artist-avatar{width:54px;height:54px;border-radius:10px;flex-shrink:0;overflow:hidden;background:#12102a;border:0.5px solid #2a2440;display:flex;align-items:center;justify-content:center;font-size:28px;}
+.artist-avatar img{width:100%;height:100%;object-fit:cover;}
+.artist-info{flex:1;min-width:0;}
+.artist-name{font-family:'IM Fell English',serif;font-size:calc(16px * var(--fs));color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.artist-meta{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(12px * var(--fs));color:var(--text2);margin-top:1px;}
+.badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
+.badge{font-family:'Cormorant Garamond',serif;font-size:calc(11px * var(--fs));padding:2px 8px;border-radius:20px;background:#1e1628;color:var(--gold);border:0.5px solid #3a2e50;}
+.badge.genre{background:#0e1e14;color:#5a9a6a;border:0.5px solid #1e3a28;}
+.player{margin-top:8px;background:#060415;border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:8px;border:0.5px solid #c9a84c22;}
+.play-btn{width:30px;height:30px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;font-size:11px;transition:transform .15s;}
+.play-btn:active{transform:scale(0.9);}
+.play-btn.playing{background:var(--gold2);}
+.track-info{flex:1;min-width:0;}
+.track-name{font-family:'Cormorant Garamond',serif;font-size:calc(12px * var(--fs));font-weight:600;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.track-sub{font-size:calc(11px * var(--fs));color:var(--text2);font-family:'Cormorant Garamond',serif;font-style:italic;}
+.track-bar{height:3px;background:#1e1a30;border-radius:2px;margin-top:4px;}
+.track-progress{height:100%;width:0%;background:var(--gold);border-radius:2px;}
+.track-time{font-size:10px;color:var(--dim);flex-shrink:0;font-family:'Cormorant Garamond',serif;min-width:32px;text-align:right;}
+.tl-wrap{padding:14px 12px;}
+.tl-block{margin-bottom:22px;}
+.tl-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.tl-decade{font-family:'IM Fell English',serif;font-size:calc(30px * var(--fs));color:var(--gold);min-width:64px;}
+.tl-line{flex:1;height:0.5px;background:linear-gradient(to right,#c9a84c44,transparent);}
+.tl-count{font-size:calc(12px * var(--fs));color:var(--dim);font-family:'Cormorant Garamond',serif;font-style:italic;}
+.tl-desc{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(13px * var(--fs));color:var(--text2);margin-bottom:10px;}
+.tl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:7px;}
+.tl-chip{background:var(--ink2);border:0.5px solid #1e1a30;border-radius:9px;padding:8px 10px;cursor:pointer;transition:border-color .2s;}
+.tl-chip:active{border-color:var(--gold3);}
+.tl-flag{font-size:15px;margin-bottom:2px;}
+.tl-name{font-family:'IM Fell English',serif;font-size:calc(13px * var(--fs));color:var(--text);line-height:1.2;}
+.tl-genre{font-size:calc(11px * var(--fs));color:var(--dim);font-family:'Cormorant Garamond',serif;font-style:italic;margin-top:2px;}
+.stats-wrap{padding:14px 12px;}
+.stats-section{margin-bottom:14px;}
+.stats-section-title{font-family:'IM Fell English',serif;font-size:calc(15px * var(--fs));color:var(--gold);margin-bottom:10px;}
+.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.total-box{background:var(--ink2);border:0.5px solid #c9a84c22;border-radius:10px;padding:10px;text-align:center;}
+.total-num{font-family:'IM Fell English',serif;font-size:calc(28px * var(--fs));color:var(--gold);}
+.total-label{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(11px * var(--fs));color:var(--dim);margin-top:2px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.bar-label{font-family:'Cormorant Garamond',serif;font-size:calc(12px * var(--fs));color:var(--text2);min-width:68px;flex-shrink:0;}
+.bar-track{flex:1;height:6px;background:#1a1828;border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;background:linear-gradient(to right,var(--gold3),var(--gold));}
+.bar-val{font-family:'Cormorant Garamond',serif;font-size:calc(12px * var(--fs));color:var(--gold);min-width:28px;text-align:right;flex-shrink:0;}
+.countries-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.country-item{display:flex;align-items:center;gap:7px;background:#060415;border-radius:7px;padding:6px 9px;}
+.country-flag{font-size:18px;}
+.country-name{font-size:calc(12px * var(--fs));color:var(--text);font-family:'Cormorant Garamond',serif;}
+.country-count{font-size:calc(11px * var(--fs));color:var(--dim);font-family:'Cormorant Garamond',serif;font-style:italic;}
+.reload-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin:16px auto 0;padding:10px 22px;background:none;border:0.5px solid var(--gold3);border-radius:20px;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:calc(14px * var(--fs));cursor:pointer;transition:all .2s;}
+.reload-btn:active{background:#1e1628;}
+.quiz-wrap{padding:14px 12px;}
+.quiz-score-bar{display:flex;align-items:center;justify-content:space-between;background:var(--ink2);border:0.5px solid #1e1a30;border-radius:10px;padding:10px 14px;margin-bottom:12px;}
+.quiz-score-item{text-align:center;}
+.quiz-score-num{font-family:'IM Fell English',serif;font-size:calc(22px * var(--fs));color:var(--gold);}
+.quiz-score-lbl{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(11px * var(--fs));color:var(--dim);}
+.quiz-card{background:var(--ink2);border:0.5px solid #1e1a30;border-radius:12px;padding:14px;}
+.quiz-q-label{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(12px * var(--fs));color:var(--gold3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;}
+.quiz-player{background:#060415;border:0.5px solid #c9a84c33;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.quiz-play-btn{width:38px;height:38px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;font-size:14px;transition:transform .15s;}
+.quiz-play-btn:active{transform:scale(0.9);}
+.quiz-play-btn.playing{background:var(--gold2);}
+.quiz-wave{flex:1;display:flex;align-items:center;gap:3px;height:32px;}
+.quiz-wave span{display:inline-block;width:3px;border-radius:2px;background:var(--dim2);transition:height .3s ease;}
+.quiz-wave.active span{background:var(--gold3);animation:wv 1s ease-in-out infinite;}
+.quiz-wave.active span:nth-child(2){animation-delay:.1s;}
+.quiz-wave.active span:nth-child(3){animation-delay:.2s;}
+.quiz-wave.active span:nth-child(4){animation-delay:.3s;}
+.quiz-wave.active span:nth-child(5){animation-delay:.15s;}
+.quiz-wave.active span:nth-child(6){animation-delay:.25s;}
+.quiz-wave.active span:nth-child(7){animation-delay:.05s;}
+.quiz-wave.active span:nth-child(8){animation-delay:.35s;}
+@keyframes wv{0%,100%{height:4px;}50%{height:22px;}}
+.quiz-timer{font-family:'Cormorant Garamond',serif;font-size:calc(13px * var(--fs));color:var(--dim);flex-shrink:0;min-width:36px;text-align:right;}
+.quiz-track-title{font-family:'Cormorant Garamond',serif;font-size:calc(11px * var(--fs));color:var(--text2);font-style:italic;margin-bottom:12px;text-align:center;min-height:16px;}
+.quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.quiz-opt{padding:12px 10px;border:0.5px solid var(--dim2);border-radius:10px;background:#060415;cursor:pointer;font-family:'IM Fell English',serif;font-size:calc(14px * var(--fs));color:var(--text);text-align:center;transition:all .2s;line-height:1.3;}
+.quiz-opt:active{transform:scale(0.97);}
+.quiz-opt.correct{border-color:#3B6D11;background:#0e1e0e;color:#7acc7a;}
+.quiz-opt.wrong{border-color:#A32D2D;background:#1e0e0e;color:#cc6666;}
+.quiz-opt.reveal{border-color:#3B6D11;background:#0e1e0e;color:#7acc7a;}
+.quiz-opt.disabled{pointer-events:none;opacity:0.6;}
+.quiz-result{margin-top:12px;min-height:20px;text-align:center;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(14px * var(--fs));}
+.quiz-next-btn{display:block;width:100%;margin-top:14px;padding:12px;background:none;border:0.5px solid var(--gold3);border-radius:10px;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:calc(15px * var(--fs));cursor:pointer;transition:all .2s;display:none;}
+.quiz-next-btn.show{display:block;}
+.quiz-next-btn:active{background:#1e1628;}
+.quiz-end{text-align:center;padding:30px 20px;}
+.quiz-end-score{font-family:'IM Fell English',serif;font-size:calc(48px * var(--fs));color:var(--gold);}
+.quiz-end-label{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(16px * var(--fs));color:var(--text2);margin-top:4px;}
+.quiz-end-msg{font-family:'Cormorant Garamond',serif;font-size:calc(15px * var(--fs));color:var(--text);margin-top:16px;line-height:1.6;}
+.quiz-restart-btn{margin:20px auto 0;padding:12px 28px;background:none;border:0.5px solid var(--gold3);border-radius:20px;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:calc(15px * var(--fs));cursor:pointer;display:inline-block;}
+.quiz-notready{text-align:center;padding:60px 20px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(15px * var(--fs));color:var(--dim);}
+.detail-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--ink);z-index:100;display:none;flex-direction:column;overflow:hidden;}
+.detail-overlay.open{display:flex;}
+.detail-header{padding:calc(14px + env(safe-area-inset-top)) 16px 11px;display:flex;align-items:center;gap:10px;background:var(--ink);flex-shrink:0;border-bottom:0.5px solid #1e1a30;}
+.back-btn{background:none;border:none;color:var(--gold);font-size:22px;cursor:pointer;padding:0 6px 0 0;line-height:1;}
+.detail-title{font-family:'IM Fell English',serif;font-size:calc(17px * var(--fs));color:var(--gold);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.detail-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(20px + env(safe-area-inset-bottom));}
+.detail-art{width:120px;height:120px;border-radius:14px;border:1px solid #2a2440;object-fit:cover;display:block;margin:0 auto 14px;}
+.detail-art-ph{width:120px;height:120px;border-radius:14px;border:0.5px solid #2a2440;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:52px;background:#12102a;}
+.dsec{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(12px * var(--fs));color:var(--gold3);letter-spacing:0.08em;text-transform:uppercase;margin:14px 0 6px;border-bottom:0.5px solid #1e1a30;padding-bottom:4px;}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:4px;}
+.dstat{background:var(--ink2);border:0.5px solid #1e1a30;border-radius:8px;padding:8px 10px;}
+.dstat-lbl{font-size:calc(11px * var(--fs));color:var(--text2);font-family:'Cormorant Garamond',serif;font-style:italic;}
+.dstat-val{font-size:calc(15px * var(--fs));color:var(--gold);font-family:'IM Fell English',serif;margin-top:2px;}
+.tracks-list{display:flex;flex-direction:column;gap:6px;}
+.track-row{background:#060415;border:0.5px solid #1a1828;border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:9px;}
+.track-row .play-btn{width:28px;height:28px;font-size:10px;}
+.track-title{font-family:'Cormorant Garamond',serif;font-size:calc(13px * var(--fs));color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.track-year-lbl{font-size:calc(11px * var(--fs));color:var(--gold3);font-family:'Cormorant Garamond',serif;font-style:italic;flex-shrink:0;}
+.settings-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--ink);z-index:200;display:none;flex-direction:column;overflow:hidden;}
+.settings-overlay.open{display:flex;}
+.settings-body{flex:1;overflow-y:auto;padding:14px 14px calc(20px + env(safe-area-inset-bottom));}
+.settings-section{margin-bottom:20px;}
+.settings-label{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:calc(12px * var(--fs));color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+.font-row{display:flex;align-items:center;gap:10px;}
+.font-btn{background:var(--ink2);border:0.5px solid #2a2440;border-radius:7px;padding:6px 16px;font-family:'Cormorant Garamond',serif;font-size:calc(16px * var(--fs));color:var(--text);cursor:pointer;}
+.font-val{font-family:'IM Fell English',serif;font-size:calc(16px * var(--fs));color:var(--gold);min-width:36px;text-align:center;}
+.apps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
+.apps-grid-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.apps-grid-item img{width:56px;height:56px;border-radius:13px;background:#12102a;}
+.apps-grid-item span{font-size:10px;color:var(--text2);font-family:'Cormorant Garamond',serif;text-align:center;line-height:1.2;}
+.apps-badge{display:block;margin:14px auto 0;width:140px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div>
+      <div class="header-title" id="hdr-title">Légendes de la Pop</div>
+      <div class="header-sub">60s · 70s · 80s</div>
+    </div>
+    <div class="hdr-right">
+      <button class="lang-btn" id="langBtn" onclick="toggleLang()">🇬🇧</button>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-art" onclick="showTab('art')">🎤 <span class="t" data-fr="Artistes" data-en="Artists">Artistes</span></button>
+    <button class="tab-btn" id="tab-tl" onclick="showTab('tl')">📅 <span class="t" data-fr="Timeline" data-en="Timeline">Timeline</span></button>
+    <button class="tab-btn" id="tab-quiz" onclick="showTab('quiz')">🎧 Quiz</button>
+    <button class="tab-btn" id="tab-stats" onclick="showTab('stats')">📊 Stats</button>
+  </div>
+
+  <div class="main">
+    <div id="sec-art" class="section active">
+      <div id="art-loading" class="loading-screen">
+        <div class="loading-icon">🎵</div>
+        <div class="loading-text" id="loading-text">Recherche en cours…</div>
+        <div class="loading-sub" id="loading-sub">iTunes · rock · soul · pop · disco</div>
+        <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+      </div>
+      <div id="art-content" style="display:none;">
+        <div class="search-wrap">
+          <input class="search-input" id="searchInput" placeholder="Rechercher un artiste…" oninput="onSearch(this.value)">
+          <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+        </div>
+        <div class="filter-row" id="filterRow"></div>
+        <div class="artist-list" id="artistList"></div>
+      </div>
+    </div>
+
+    <div id="sec-tl" class="section">
+      <div class="tl-wrap" id="tlWrap"></div>
+    </div>
+
+    <div id="sec-quiz" class="section">
+      <div class="quiz-wrap" id="quizWrap"></div>
+    </div>
+
+    <div id="sec-stats" class="section">
+      <div class="stats-wrap" id="statsWrap"></div>
+    </div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="detail-overlay" id="detailOverlay">
+    <div class="detail-header">
+      <button class="back-btn" onclick="closeDetail()">←</button>
+      <div class="detail-title" id="detailTitle"></div>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="settings-overlay" id="settingsOverlay">
+    <div class="detail-header">
+      <button class="back-btn" onclick="closeSettings()">←</button>
+      <div class="detail-title" id="settings-title">Réglages</div>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section">
+        <div class="settings-label">Taille du texte</div>
+        <div class="font-row">
+          <button class="font-btn" onclick="changeFont(-0.1)">A−</button>
+          <div class="font-val" id="fontVal">100%</div>
+          <button class="font-btn" onclick="changeFont(0.1)">A+</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">Mes autres apps</div>
+        <div class="apps-grid" id="appsGrid"></div>
+        <a href="https://apps.apple.com/developer/michel-garlandat/id368771203" target="_blank">
+          <img class="apps-badge" src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/fr-fr" alt="App Store">
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CapHttp = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.CapacitorHttp;
+
+const QUERIES = [
+  {term:'rock 60s',decade:'60s',genre:'Rock'},
+  {term:'soul 60s',decade:'60s',genre:'Soul'},
+  {term:'pop 60s',decade:'60s',genre:'Pop'},
+  {term:'beat 60s',decade:'60s',genre:'Beat'},
+  {term:'rock 70s',decade:'70s',genre:'Rock'},
+  {term:'disco 70s',decade:'70s',genre:'Disco'},
+  {term:'funk 70s',decade:'70s',genre:'Funk'},
+  {term:'pop 70s',decade:'70s',genre:'Pop'},
+  {term:'rock 80s',decade:'80s',genre:'Rock'},
+  {term:'pop 80s',decade:'80s',genre:'Pop'},
+  {term:'new wave 80s',decade:'80s',genre:'New Wave'},
+  {term:'r&b 80s',decade:'80s',genre:'R&B'},
+  {term:'chanson francaise 70s',decade:'70s',genre:'Chanson'},
+];
+
+const DECADE_DESCS = {
+  fr:{'60s':'Rock\'n\'roll, yéyé, soul — la révolution musicale mondiale','70s':'Prog rock, disco, funk — explosion des genres','80s':'Synth-pop, new wave, MTV — l\'ère du clip vidéo'},
+  en:{'60s':'Rock\'n\'roll, soul, psychedelia — a global musical revolution','70s':'Prog rock, disco, funk — explosion of genres','80s':'Synth-pop, new wave, MTV — the video clip era'}
+};
+
+const OTHER_APPS = [
+  {id:'6763507194',name:'Hotels\nRoofTop'},{id:'6762618424',name:'Ponts du\nMonde'},{id:'6763076110',name:'Paquebots\nLiners'},
+  {id:'6763069304',name:'Avions de\nLégende'},{id:'6763071567',name:'Voitures de\nLégende'},{id:'6762077646',name:'Flip\nBoard'},
+  {id:'6762632868',name:'Trains\nMythiques'},{id:'6762823383',name:'Châteaux\nLoire'},{id:'6762598304',name:'Mers &\nOcéans'},
+  {id:'6762594201',name:'Détroits'},{id:'6762558969',name:'ColorCode\nMind'},{id:'6762552826',name:'Lexigo'},
+  {id:'6762542395',name:'Conquêtes\nSociales'},{id:'6762522136',name:'Dynasties\nChinoises'},{id:'6762452564',name:'Dynasties\nRusses'},
+  {id:'6762370541',name:'États-Unis'},{id:'6762091681',name:'Bataille\nNavale'},{id:'6762098486',name:'Familles\nRoyales'},
+  {id:'6762263227',name:'Leaders\nEuropéens'},{id:'6762346365',name:'Pays UE'},{id:'6762256169',name:'Présidents\nAméricains'},
+  {id:'6762076518',name:'Dames\nCheckers'},{id:'6761993002',name:'Comédie\nFrançaise'},{id:'6761769529',name:'Institut\nde France'},
+  {id:'6761324444',name:'Présidents\nFrançais'},{id:'6761709149',name:'Basilique\nSt-Denis'},{id:'6761685637',name:'Arbres\nde France'},
+  {id:'6761363063',name:'Sénat\nParis'},{id:'6761656628',name:'Compositeurs'},{id:'6761374601',name:'Maréchaux\nNapoléon'},
+  {id:'6761322546',name:'Rois de\nFrance'},{id:'6761361079',name:'Assemblée\nParis'},{id:'6761335268',name:'Panthéon\nParis'},
+  {id:'1483084001',name:'Belote\nCalc'},{id:'6760751055',name:'Cimetières\nParis'},{id:'1481989301',name:'Tarots\nCalc'},
+  {id:'6761334922',name:'Académie\nfrançaise'},{id:'6761293938',name:'Scènes\nParis'},{id:'6761271324',name:'MediSafe'},
+  {id:'6760617965',name:'MesResta-\nurants'},{id:'6760126279',name:'Cave\nManager'},{id:'6760890465',name:'Musées\nParis'},
+  {id:'6760929391',name:'Théâtres\nParis'},{id:'6759219383',name:'FreshFood\nManager'},{id:'6761421276',name:'Capitales\nEurope'},
+  {id:'6762006105',name:'Iconic\nCovers'},{id:'6767135193',name:'Auteurs\nde BD'},{id:'6766260978',name:'Histoire\nInfo'},
+  {id:'6766261703',name:'Micro-Info'},{id:'6767492967',name:'Institutions\nMondiales'},{id:'6767273597',name:'Machines\nLég.'},
+  {id:'6767810270',name:'Îles du\nMonde'},{id:'6768003416',name:'Explorateurs'},{id:'6768068634',name:'Peintres\nCélèbres'},
+  {id:'6768320574',name:'Légion\nHonneur'},{id:'6762208827',name:'Dynasties\nRoyales'},
+];
+
+const FLAG_MAP = {
+  'USA':'🇺🇸','GBR':'🇬🇧','FRA':'🇫🇷','DEU':'🇩🇪','ITA':'🇮🇹','ESP':'🇪🇸','CAN':'🇨🇦','AUS':'🇦🇺',
+  'SWE':'🇸🇪','NLD':'🇳🇱','JPN':'🇯🇵','BRA':'🇧🇷','BEL':'🇧🇪','IRL':'🇮🇪','NOR':'🇳🇴',
+  'US':'🇺🇸','GB':'🇬🇧','FR':'🇫🇷','DE':'🇩🇪','IT':'🇮🇹','ES':'🇪🇸','CA':'🇨🇦','AU':'🇦🇺',
+  'SE':'🇸🇪','NL':'🇳🇱','JP':'🇯🇵','BR':'🇧🇷','BE':'🇧🇪','NO':'🇳🇴','DK':'🇩🇰',
+};
+
+let lang = localStorage.getItem('ldp_lang') || 'fr';
+let fontScale = parseFloat(localStorage.getItem('ldp_fs') || (/ipad/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/mac/i.test(navigator.userAgent))?'1.3':'1.0'));
+let artists = [];
+let filteredArtists = [];
+let activeFilter = 'all';
+let searchQ = '';
+let currentAudio = null;
+let currentPlayBtn = null;
+let progressInterval = null;
+
+function flag(code){ return FLAG_MAP[(code||'').toUpperCase()] || '🌍'; }
+
+async function itunesFetch(term){
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=50&country=fr`;
+  try {
+    if(CapHttp){
+      const r = await CapHttp.get({url, headers:{}});
+      const d = typeof r.data==='string' ? JSON.parse(r.data) : r.data;
+      return d.results||[];
+    } else {
+      const d = await (await fetch(url)).json();
+      return d.results||[];
+    }
+  } catch(e){ return []; }
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+async function loadAll(){
+  setLoading(true);
+  document.getElementById('loading-text').textContent = lang==='fr'?'Recherche en cours…':'Searching…';
+  document.getElementById('loading-sub').textContent = 'rock · soul · pop · disco · funk · new wave';
+  const map = {};
+
+  // Toutes les requêtes en parallèle
+  const allResults = await Promise.all(
+    QUERIES.map(q => itunesFetch(q.term).then(results => ({q, results})))
+  );
+
+  for(const {q, results} of allResults){
+    for(const r of results){
+      if(!r.previewUrl||!r.artistName) continue;
+      const k=r.artistName.toLowerCase().trim();
+      if(!map[k]){
+        map[k]={name:r.artistName,genre:q.genre,decades:new Set([q.decade]),genres:new Set([q.genre]),
+          country:r.country||'',flag:flag(r.country),
+          artwork:(r.artworkUrl100||'').replace('100x100','300x300'),tracks:[]};
+      }
+      map[k].decades.add(q.decade);
+      map[k].genres.add(q.genre);
+      if(!map[k].artwork&&r.artworkUrl100) map[k].artwork=r.artworkUrl100.replace('100x100','300x300');
+      if(map[k].tracks.length<5) map[k].tracks.push({title:r.trackName,preview:r.previewUrl,year:(r.releaseDate||'').slice(0,4),artwork:r.artworkUrl100||'',storeUrl:r.trackViewUrl||''});
+    }
+  }
+
+  let all = Object.values(map).filter(a=>a.tracks.length>0);
+  shuffle(all);
+  artists = all.slice(0,50);
+  artists.forEach(a=>{ a.decadesArr=[...a.decades].sort(); a.genresArr=[...a.genres]; });
+  setLoading(false);
+  renderArtists();
+  renderTimeline();
+  renderStats();
+}
+
+function setLoading(on){
+  document.getElementById('art-loading').style.display=on?'flex':'none';
+  document.getElementById('art-content').style.display=on?'none':'block';
+}
+
+function renderArtists(){
+  const fr=document.getElementById('filterRow');
+  fr.innerHTML=['all','60s','70s','80s'].map(d=>`<button class="filter-chip ${d===activeFilter?'active':''}" onclick="setFilter('${d}')">${d==='all'?(lang==='fr'?'Tous':'All'):d}</button>`).join('');
+  applyFilter();
+}
+
+function setFilter(d){ activeFilter=d; renderArtists(); }
+
+function onSearch(v){
+  searchQ=v.toLowerCase();
+  document.getElementById('searchClear').style.display=v?'flex':'none';
+  applyFilter();
+}
+function clearSearch(){ document.getElementById('searchInput').value=''; onSearch(''); }
+
+function applyFilter(){
+  filteredArtists=artists.filter(a=>{
+    const dOk=activeFilter==='all'||a.decadesArr.includes(activeFilter);
+    const sOk=!searchQ||a.name.toLowerCase().includes(searchQ)||a.genresArr.join(' ').toLowerCase().includes(searchQ);
+    return dOk&&sOk;
+  });
+  const list=document.getElementById('artistList');
+  if(!filteredArtists.length){
+    list.innerHTML=`<div style="text-align:center;padding:40px 20px;font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--dim);font-size:calc(15px * var(--fs))">${lang==='fr'?'Aucun artiste trouvé':'No artist found'}</div>`;
+    return;
+  }
+  list.innerHTML=filteredArtists.map(a=>{
+    const idx=artists.indexOf(a);
+    const t=a.tracks[0];
+    return `<div class="artist-card" onclick="openDetail(${idx})">
+      <div class="artist-avatar">${a.artwork?`<img src="${a.artwork}" onerror="this.parentNode.innerHTML='${a.flag}'" loading="lazy">`:a.flag}</div>
+      <div class="artist-info">
+        <div class="artist-name">${a.name}</div>
+        <div class="artist-meta">${a.genresArr[0]} · ${a.country||'?'}</div>
+        <div class="badges">${a.decadesArr.map(d=>`<span class="badge">${d}</span>`).join('')}${a.genresArr.slice(0,2).map(g=>`<span class="badge genre">${g}</span>`).join('')}</div>
+        ${t?`<div class="player" onclick="event.stopPropagation()">
+          <button class="play-btn" id="pb-${idx}" onclick="togglePlay(${idx},0,this)">▶</button>
+          <div class="track-info">
+            <div class="track-name" id="tn-${idx}">${t.title}</div>
+            <div class="track-sub">${t.year} · 30s preview</div>
+            <div class="track-bar"><div class="track-progress" id="tp-${idx}"></div></div>
+          </div>
+          <div class="track-time" id="tt-${idx}">0:30</div>
+          ${a.tracks[0].storeUrl?`<a href="${a.tracks[0].storeUrl}" onclick="event.stopPropagation();window.open('${a.tracks[0].storeUrl}','_system');return false;" style="color:var(--gold3);font-size:18px;text-decoration:none;flex-shrink:0;" title="iTunes Store">🛒</a>`:''}
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePlay(idx,ti,btn){
+  const track=artists[idx].tracks[ti];
+  if(!track||!track.preview) return;
+  if(currentAudio){
+    currentAudio.pause(); currentAudio=null; clearInterval(progressInterval);
+    if(currentPlayBtn){ currentPlayBtn.textContent='▶'; currentPlayBtn.classList.remove('playing'); }
+    if(btn===currentPlayBtn){ currentPlayBtn=null; return; }
+  }
+  const audio=new Audio(track.preview);
+  currentAudio=audio; currentPlayBtn=btn;
+  btn.textContent='⏸'; btn.classList.add('playing');
+  audio.play().catch(()=>{});
+  progressInterval=setInterval(()=>{
+    if(!audio.duration) return;
+    const p=document.getElementById('tp-'+idx); const t2=document.getElementById('tt-'+idx);
+    if(p) p.style.width=(audio.currentTime/audio.duration*100)+'%';
+    if(t2) t2.textContent='0:'+String(Math.max(0,Math.ceil(audio.duration-audio.currentTime))).padStart(2,'0');
+  },400);
+  audio.onended=()=>{ btn.textContent='▶'; btn.classList.remove('playing'); clearInterval(progressInterval); currentAudio=null; currentPlayBtn=null; const p=document.getElementById('tp-'+idx); const t2=document.getElementById('tt-'+idx); if(p) p.style.width='0%'; if(t2) t2.textContent='0:30'; };
+}
+
+function stopAll(){
+  if(currentAudio){ currentAudio.pause(); currentAudio=null; } clearInterval(progressInterval);
+  if(currentPlayBtn){ currentPlayBtn.textContent='▶'; currentPlayBtn.classList.remove('playing'); currentPlayBtn=null; }
+}
+
+function openDetail(idx){
+  const a=artists[idx];
+  document.getElementById('detailTitle').textContent=a.name;
+  const body=document.getElementById('detailBody');
+  const artHtml=a.artwork?`<img class="detail-art" src="${a.artwork}" onerror="this.style.display='none'">`:`<div class="detail-art-ph">${a.flag}</div>`;
+  const tracksHtml=a.tracks.map((t,ti)=>`<div class="track-row"><button class="play-btn" id="dpb-${idx}-${ti}" onclick="togglePlayD(${idx},${ti},this)">▶</button><div class="track-title">${t.title}</div><div class="track-year-lbl">${t.year}</div>${t.storeUrl?`<a href="${t.storeUrl}" onclick="window.open('${t.storeUrl}','_system');return false;" style="color:var(--gold3);font-size:18px;text-decoration:none;flex-shrink:0;" title="iTunes Store">🛒</a>`:''}</div>`).join('');
+  const lf=lang==='fr';
+  body.innerHTML=`${artHtml}
+    <div class="dsec">${lf?'Informations':'Information'}</div>
+    <div class="dgrid">
+      <div class="dstat"><div class="dstat-lbl">${lf?'Pays':'Country'}</div><div class="dstat-val">${a.flag} ${a.country||'?'}</div></div>
+      <div class="dstat"><div class="dstat-lbl">${lf?'Décennies':'Decades'}</div><div class="dstat-val">${a.decadesArr.join(' · ')}</div></div>
+      <div class="dstat"><div class="dstat-lbl">Genre</div><div class="dstat-val">${a.genresArr[0]}</div></div>
+      <div class="dstat"><div class="dstat-lbl">${lf?'Titres':'Tracks'}</div><div class="dstat-val">${a.tracks.length}</div></div>
+    </div>
+    <div class="dsec">${lf?'Extraits à écouter':'Listen to previews'}</div>
+    <div class="tracks-list">${tracksHtml}</div>`;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeDetail(){ stopAll(); document.getElementById('detailOverlay').classList.remove('open'); }
+
+function togglePlayD(idx,ti,btn){
+  const track=artists[idx].tracks[ti];
+  if(!track||!track.preview) return;
+  if(currentAudio){ currentAudio.pause(); currentAudio=null; clearInterval(progressInterval); if(currentPlayBtn){ currentPlayBtn.textContent='▶'; currentPlayBtn.classList.remove('playing'); } if(btn===currentPlayBtn){ currentPlayBtn=null; return; } }
+  const audio=new Audio(track.preview); currentAudio=audio; currentPlayBtn=btn;
+  btn.textContent='⏸'; btn.classList.add('playing');
+  audio.play().catch(()=>{});
+  audio.onended=()=>{ btn.textContent='▶'; btn.classList.remove('playing'); currentAudio=null; currentPlayBtn=null; };
+}
+
+function renderTimeline(){
+  const wrap=document.getElementById('tlWrap');
+  wrap.innerHTML=['60s','70s','80s'].map(d=>{
+    const list=artists.filter(a=>a.decadesArr.includes(d));
+    return `<div class="tl-block">
+      <div class="tl-header"><div class="tl-decade">${d}</div><div class="tl-line"></div><div class="tl-count">${list.length} ${lang==='fr'?'artiste'+(list.length>1?'s':''):'artist'+(list.length>1?'s':'')}</div></div>
+      <div class="tl-desc">${DECADE_DESCS[lang][d]}</div>
+      <div class="tl-grid">${list.map(a=>`<div class="tl-chip" onclick="openDetail(${artists.indexOf(a)})"><div class="tl-flag">${a.flag}</div><div class="tl-name">${a.name}</div><div class="tl-genre">${a.genresArr[0]}</div></div>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderStats(){
+  const wrap=document.getElementById('statsWrap');
+  const total=artists.length;
+  const totalT=artists.reduce((s,a)=>s+a.tracks.length,0);
+  const withP=artists.filter(a=>a.tracks.some(t=>t.preview)).length;
+  const decC={'60s':0,'70s':0,'80s':0};
+  artists.forEach(a=>a.decadesArr.forEach(d=>{ if(decC[d]!==undefined) decC[d]++; }));
+  const genC={};
+  artists.forEach(a=>a.genresArr.forEach(g=>{ genC[g]=(genC[g]||0)+1; }));
+  const topG=Object.entries(genC).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const ctC={};
+  artists.forEach(a=>{ const c=a.country||'?'; ctC[c]=(ctC[c]||0)+1; });
+  const topC=Object.entries(ctC).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxD=Math.max(...Object.values(decC));
+  const maxG=topG[0]?.[1]||1;
+  const lf=lang==='fr';
+  wrap.innerHTML=`
+    <div class="stats-section">
+      <div class="totals">
+        <div class="total-box"><div class="total-num">${total}</div><div class="total-label">${lf?'Artistes':'Artists'}</div></div>
+        <div class="total-box"><div class="total-num">${totalT}</div><div class="total-label">${lf?'Titres':'Tracks'}</div></div>
+        <div class="total-box"><div class="total-num">${withP}</div><div class="total-label">${lf?'Avec audio':'With audio'}</div></div>
+      </div>
+    </div>
+    <div class="stats-section">
+      <div class="stats-section-title">${lf?'Par décennie':'By decade'}</div>
+      ${Object.entries(decC).map(([d,n])=>`<div class="bar-row"><div class="bar-label">${d}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxD*100)}%"></div></div><div class="bar-val">${n}</div></div>`).join('')}
+    </div>
+    <div class="stats-section">
+      <div class="stats-section-title">${lf?'Genres musicaux':'Music genres'}</div>
+      ${topG.map(([g,n])=>`<div class="bar-row"><div class="bar-label">${g}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxG*100)}%"></div></div><div class="bar-val">${n}</div></div>`).join('')}
+    </div>
+    <div class="stats-section">
+      <div class="stats-section-title">${lf?'Pays d\'origine':'Countries'}</div>
+      <div class="countries-grid">${topC.map(([c,n])=>`<div class="country-item"><div class="country-flag">${flag(c)}</div><div><div class="country-name">${c}</div><div class="country-count">${n} ${lf?'artiste'+(n>1?'s':''):'artist'+(n>1?'s':'')}</div></div></div>`).join('')}</div>
+    </div>
+    <button class="reload-btn" onclick="reloadArtists()">🔀 ${lf?'Nouvelle sélection aléatoire':'New random selection'}</button>`;
+}
+
+async function reloadArtists(){
+  stopAll(); artists=[];
+  showTab('art');
+  await loadAll();
+}
+
+function showTab(id){
+  ['art','tl','quiz','stats'].forEach(t=>{ document.getElementById('sec-'+t).classList.toggle('active',t===id); document.getElementById('tab-'+t).classList.toggle('active',t===id); });
+  stopAll();
+  if(id==='quiz') initQuiz();
+}
+
+function toggleLang(){
+  lang=lang==='fr'?'en':'fr';
+  localStorage.setItem('ldp_lang',lang);
+  document.getElementById('langBtn').textContent=lang==='fr'?'🇬🇧':'🇫🇷';
+  document.getElementById('hdr-title').textContent=lang==='fr'?'Légendes de la Pop':'Pop Legends';
+  document.getElementById('settings-title').textContent=lang==='fr'?'Réglages':'Settings';
+  document.getElementById('searchInput').placeholder=lang==='fr'?'Rechercher un artiste…':'Search an artist…';
+  document.querySelectorAll('.t[data-fr]').forEach(el=>el.textContent=lang==='fr'?el.dataset.fr:el.dataset.en);
+  if(artists.length){ renderArtists(); renderTimeline(); renderStats(); }
+}
+
+function applyFontSize(){ document.documentElement.style.setProperty('--fs',fontScale); document.getElementById('fontVal').textContent=Math.round(fontScale*100)+'%'; }
+function changeFont(d){ fontScale=Math.max(0.8,Math.min(1.6,Math.round((fontScale+d)*10)/10)); localStorage.setItem('ldp_fs',fontScale); applyFontSize(); }
+
+function openSettings(){ loadAppsGrid(); document.getElementById('settingsOverlay').classList.add('open'); }
+function closeSettings(){ document.getElementById('settingsOverlay').classList.remove('open'); }
+
+function loadAppsGrid(){
+  const grid=document.getElementById('appsGrid');
+  if(grid.childElementCount>0) return;
+  OTHER_APPS.forEach(app=>{
+    const item=document.createElement('div'); item.className='apps-grid-item';
+    item.onclick=()=>window.open('https://apps.apple.com/app/id'+app.id,'_system');
+    const img=document.createElement('img'); img.width=56; img.height=56; img.style.borderRadius='13px';
+    const n=parseInt(app.id);
+    window['itcb'+n]=function(d){ if(d.results&&d.results[0]) img.src=d.results[0].artworkUrl60; };
+    const s=document.createElement('script'); s.src='https://itunes.apple.com/lookup?id='+n+'&callback=itcb'+n; document.body.appendChild(s);
+    const lbl=document.createElement('span'); lbl.textContent=app.name.replace('\n',' '); lbl.style.cssText='font-size:10px;color:var(--text2);text-align:center;line-height:1.2;';
+    item.appendChild(img); item.appendChild(lbl); grid.appendChild(item);
+  });
+}
+
+
+// ─── QUIZ ─────────────────────────────────────────────────
+let quizQ = [];       // questions générées
+let quizIdx = 0;      // question courante
+let quizScore = 0;
+let quizTotal = 10;
+let quizAnswered = false;
+let quizAudio = null;
+let quizTimerInterval = null;
+
+function initQuiz(){
+  const wrap = document.getElementById('quizWrap');
+  if(!artists.length){
+    wrap.innerHTML = `<div class="quiz-notready">${lang==='fr'?'Chargement des artistes en cours…':'Loading artists…'}</div>`;
+    return;
+  }
+  // Build question pool from artists with previews
+  const pool = artists.filter(a=>a.tracks.some(t=>t.preview));
+  if(pool.length < 4){
+    wrap.innerHTML = '<div class="quiz-notready">'+(lang==='fr'?'Pas assez d\'artistes chargés':'Not enough artists loaded')+'</div>';
+    return;
+  }
+  // Generate quizTotal questions
+  const shuffled = [...pool].sort(()=>Math.random()-0.5);
+  quizQ = [];
+  for(let i=0;i<Math.min(quizTotal,shuffled.length);i++){
+    const correct = shuffled[i];
+    const track = correct.tracks.find(t=>t.preview);
+    // Pick 3 wrong answers
+    const others = pool.filter(a=>a!==correct).sort(()=>Math.random()-0.5).slice(0,3);
+    const choices = [correct,...others].sort(()=>Math.random()-0.5);
+    quizQ.push({correct, track, choices});
+  }
+  quizIdx = 0; quizScore = 0; quizAnswered = false;
+  renderQuiz();
+}
+
+function renderQuiz(){
+  const lf = lang==='fr';
+  if(quizIdx >= quizQ.length){ renderQuizEnd(); return; }
+  const q = quizQ[quizIdx];
+  const wrap = document.getElementById('quizWrap');
+  wrap.innerHTML = `
+    <div class="quiz-score-bar">
+      <div class="quiz-score-item"><div class="quiz-score-num">${quizScore}</div><div class="quiz-score-lbl">${lf?'Bons':'Correct'}</div></div>
+      <div class="quiz-score-item"><div class="quiz-score-num">${quizIdx+1}/${quizQ.length}</div><div class="quiz-score-lbl">${lf?'Question':'Question'}</div></div>
+      <div class="quiz-score-item"><div class="quiz-score-num">${quizIdx - quizScore}</div><div class="quiz-score-lbl">${lf?'Ratés':'Wrong'}</div></div>
+    </div>
+    <div class="quiz-card">
+      <div class="quiz-q-label">${lf?'Quel est cet artiste ?':'Who is this artist?'}</div>
+      <div class="quiz-player">
+        <button class="quiz-play-btn" id="qPlayBtn" onclick="toggleQuizAudio()">▶</button>
+        <div class="quiz-wave" id="qWave">
+          <span style="height:6px"></span><span style="height:10px"></span><span style="height:8px"></span>
+          <span style="height:14px"></span><span style="height:6px"></span><span style="height:10px"></span>
+          <span style="height:8px"></span><span style="height:12px"></span>
+        </div>
+        <div class="quiz-timer" id="qTimer">0:30</div>
+      </div>
+      <div class="quiz-track-title" id="qTrackTitle"></div>
+      <div class="quiz-options" id="qOptions">
+        ${q.choices.map((a,i)=>`<button class="quiz-opt" id="qopt-${i}" onclick="answerQuiz(${i})">${a.name}</button>`).join('')}
+      </div>
+      <div class="quiz-result" id="qResult"></div>
+      <button class="quiz-next-btn" id="qNextBtn" onclick="nextQuizQ()">
+        ${quizIdx+1 < quizQ.length ? (lf?'Question suivante →':'Next question →') : (lf?'Voir le résultat →':'See result →')}
+      </button>
+    </div>`;
+}
+
+function toggleQuizAudio(){
+  const q = quizQ[quizIdx];
+  const btn = document.getElementById('qPlayBtn');
+  const wave = document.getElementById('qWave');
+  const timer = document.getElementById('qTimer');
+  if(quizAudio){
+    quizAudio.pause(); quizAudio=null;
+    clearInterval(quizTimerInterval);
+    btn.textContent='▶'; btn.classList.remove('playing');
+    wave.classList.remove('active');
+    return;
+  }
+  quizAudio = new Audio(q.track.preview);
+  btn.textContent='⏸'; btn.classList.add('playing');
+  wave.classList.add('active');
+  quizAudio.play().catch(()=>{});
+  quizTimerInterval = setInterval(()=>{
+    if(!quizAudio||!quizAudio.duration) return;
+    const rem = Math.max(0, Math.ceil(quizAudio.duration - quizAudio.currentTime));
+    if(timer) timer.textContent = '0:'+String(rem).padStart(2,'0');
+  },400);
+  quizAudio.onended = ()=>{
+    btn.textContent='▶'; btn.classList.remove('playing');
+    wave.classList.remove('active');
+    clearInterval(quizTimerInterval);
+    quizAudio=null;
+  };
+}
+
+function stopQuizAudio(){
+  if(quizAudio){ quizAudio.pause(); quizAudio=null; }
+  clearInterval(quizTimerInterval);
+}
+
+function answerQuiz(choiceIdx){
+  if(quizAnswered) return;
+  quizAnswered = true;
+  stopQuizAudio();
+  const q = quizQ[quizIdx];
+  const correctIdx = q.choices.indexOf(q.correct);
+  const lf = lang==='fr';
+  const result = document.getElementById('qResult');
+  const nextBtn = document.getElementById('qNextBtn');
+  const trackTitle = document.getElementById('qTrackTitle');
+  // Show track title reveal
+  if(trackTitle) trackTitle.textContent = '♪ '+q.track.title + (q.track.year?' ('+q.track.year+')':'');
+  // Color options
+  for(let i=0;i<q.choices.length;i++){
+    const opt = document.getElementById('qopt-'+i);
+    if(!opt) continue;
+    opt.classList.add('disabled');
+    if(i===correctIdx) opt.classList.add(choiceIdx===correctIdx?"correct":"reveal");
+    else if(i===choiceIdx) opt.classList.add('wrong');
+  }
+  if(choiceIdx===correctIdx){
+    quizScore++;
+    result.textContent = lf?'✓ Bravo !':'✓ Correct!';
+    result.style.color='#7acc7a';
+  } else {
+    result.textContent = lf?('✗ C\'était '+q.correct.name):'✗ It was '+q.correct.name;
+    result.style.color='#cc6666';
+  }
+  if(nextBtn) nextBtn.classList.add('show');
+  // Bouton store sur le titre correct
+  const storeUrl = q.track.storeUrl;
+  if(storeUrl && result){
+    const storeLink = document.createElement('a');
+    storeLink.href = storeUrl;
+    storeLink.textContent = lang==='fr'?' Acheter sur iTunes':' Buy on iTunes';
+    storeLink.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-top:6px;color:var(--gold);font-family:\'Cormorant Garamond\',serif;font-size:calc(13px * var(--fs));text-decoration:none;border:0.5px solid var(--gold3);border-radius:20px;padding:4px 12px;';
+    storeLink.onclick = (e)=>{ e.preventDefault(); window.open(storeUrl,'_system'); };
+    result.appendChild(document.createElement('br'));
+    result.appendChild(storeLink);
+  }
+}
+
+function nextQuizQ(){
+  stopQuizAudio();
+  quizAnswered = false;
+  quizIdx++;
+  renderQuiz();
+}
+
+function renderQuizEnd(){
+  const lf = lang==='fr';
+  const pct = Math.round(quizScore/quizQ.length*100);
+  let msg = '';
+  if(pct>=90) msg = lf?'Extraordinaire ! Vous êtes un vrai connaisseur des légendes de la pop !':'Extraordinary! You are a true pop legend connoisseur!';
+  else if(pct>=70) msg = lf?'Très bien ! Vous connaissez bien votre histoire musicale.':'Very good! You know your music history well.';
+  else if(pct>=50) msg = lf?'Pas mal ! Continuez à explorer les artistes.':'Not bad! Keep exploring the artists.';
+  else msg = lf?'Retournez écouter les extraits et réessayez !':'Go listen to the previews and try again!';
+  const wrap = document.getElementById('quizWrap');
+  wrap.innerHTML = `
+    <div class="quiz-end">
+      <div class="quiz-end-score">${quizScore}/${quizQ.length}</div>
+      <div class="quiz-end-label">${pct}% ${lf?'de réussite':'success rate'}</div>
+      <div class="quiz-end-msg">${msg}</div>
+      <button class="quiz-restart-btn" onclick="initQuiz()">🔄 ${lf?'Rejouer':'Play again'}</button>
+    </div>`;
+}
+
+applyFontSize();
+loadAll();
+</script>
+</body>
+</html>
